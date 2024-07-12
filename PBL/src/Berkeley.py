@@ -1,4 +1,6 @@
 from Clock import Clock
+
+
 def colect_times(Clock: list[Clock]):
     list_times = []
     for i in range(len(Clock)):
@@ -14,3 +16,4 @@ def colect_drifts(Clock: list[Clock]):
 def getAvarageClockTime(Clock: list[Clock]):
     list_times = colect_times(Clock)
     return sum(list_times)/len(list_times)
+
