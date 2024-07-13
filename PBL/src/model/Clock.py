@@ -8,12 +8,12 @@ class Clock:
     def __init__(self):
         self.ip_clock = socket.gethostbyname(socket.gethostname())
         #
-        self.port = "2501"
+        self.port = "2503"
         #
         #self.list_clocks = [self.ip_clock]
         self.list_clocks = [self.port]
         self.trying_recconection = {}
-        self.time = 0
+        self.time = 10
         self.drift = 0
 
         self.leader_is_elected = False
@@ -35,21 +35,35 @@ class Clock:
     def set_trying_recconection(self, ip_clock: str, boolean: bool):
         with self.lock:
             self.trying_recconection[ip_clock] = boolean
+            print("Tentando reconexão com ", ip_clock, ": ", boolean)
 
     
     def set_ready_for_connection(self, ready_for_connection: bool):
         with self.lock:
             self.ready_for_connection = ready_for_connection
+            print("Pronto para conexão: ", ready_for_connection)
 
     
-    def get_quantity_clocks_on(self):
-        count = 0
+    def set_leader_is_elected(self, leader_is_elected: bool):
+        with self.lock:
+            self.leader_is_elected = leader_is_elected
+            print("Líder está eleito: ", leader_is_elected)
+
+    
+    def set_ip_leader(self, ip_leader: str):
+        with self.lock:
+            self.ip_leader = ip_leader
+            print("IP do líder: ", ip_leader)
+
+
+    def get_clocks_on(self):
+        list_clocks = []
         for key in self.trying_recconection.keys():
             #if key != self.ip_clock and self.trying_recconection[key] == False:
             if key != self.port and self.trying_recconection[key] == False:
-                count += 1
+                list_clocks.append(key)
         
-        return count
+        return list_clocks
 
     
     def sort_list_clocks(self):
