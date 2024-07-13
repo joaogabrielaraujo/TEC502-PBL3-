@@ -1,36 +1,76 @@
 import requests
-from utils.Utils import loop_recconection
+import threading
+import time
+from utils.Utils import loop_recconection, create_result_structure, send_request
+from impl.Berkeley_impl import syncronize_clocks
 
 
 def election(clock: object):
-
+    # Setando o clock atual como pronto para conexão
     clock.set_ready_for_connection(True)
 
     while clock.leader_is_elected == False:
 
-        while clock.get_quantity_clocks_on() == 0:
+        while len(clock.get_clocks_on()) == 0:
             pass
 
-        next_clock = find_next_clock()
+        first_clock = find_first_clock(clock)
+        print("Relógio de maior prioridade: ", first_clock)
 
-        if next_clock != None:
+        #if first_clock == clock.ip_clock:
+        if first_clock == clock.port:
 
-            #url = (f"http://{next_clock}:2500/leader_is_elected")
-            url = (f"http://{clock.ip_clock}:{next_clock}/leader_is_elected")
+            next_clock = find_next_clock(clock)
+            print("Próximo relógio: ", next_clock)
 
-            status_code = requests.get(url, timeout=5).status_code
+            if next_clock != None:
 
-            if status_code == 200:
-                
+                #url = (f"http://{next_clock}:2500/leader_is_elected")
+                url = (f"http://{clock.ip_clock}:{next_clock}/leader_is_elected")
 
+                response = requests.get(url, timeout=5)
+                status_code = response.status_code
+                response = response.json()
 
-            '''
-            first_clock = find_first_clock(clock)
+                if status_code == 200:
+                    clock.set_leader_is_elected(True)
+                    clock.set_ip_leader(response["IP líder"])
 
-            #if first_clock == clock.ip_clock:
-            if first_clock == clock.port:
-                pass
-            '''
+                else:
+                    clocks_on = clock.get_clocks_on()
+                    result_dict = create_result_structure(len(clocks_on))
+                    
+                    for i in range(len(clocks_on)):
+
+                        #url = (f"http://{clocks_on[i]}:2500/claim_leadership")
+                        url = (f"http://{clock.ip_clock}:{clocks_on[i]}/claim_leadership")
+
+                        '''all_data_request = {"URL": url, "IP do relógio": clocks_on[i], "Dados": {"IP líder": clock.ip_clock}, "Método HTTP": "GET", "Dicionário de resultados": result_dict, "Índice": i}'''
+                        all_data_request = {"URL": url, 
+                                            "IP do relógio": clocks_on[i], 
+                                            "Dados": {"IP líder": clock.port}, 
+                                            "Método HTTP": "GET", 
+                                            "Dicionário de resultados": result_dict, 
+                                            "Índice": i}
+                    
+                        threading.Thread(target=send_request, args=(clock, all_data_request,)).start()
+
+                    loop = True
+                    while loop:
+                        loop = False
+                        for key in result_dict.keys():
+                            if result_dict[key]["Terminado"] == False:
+                                loop = True
+                    
+                    clock.set_leader_is_elected(True)
+                    # clock.set_ip_leader(clock.ip_clock)
+                    clock.set_ip_leader(clock.port)
+
+                    threading.Thread(target=syncronize_clocks, args=(clock,)).start()
+                        
+        time.sleep(2)
+
+    print("Saí do loop!")
 
 
 def find_next_clock(clock: object):
@@ -53,7 +93,7 @@ def find_next_clock(clock: object):
 
                 except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
                     clock.set_trying_recconection(clock.list_clocks[i], True)
-                    threading.Thread(target=loop_reconnection, args=(clock.list_clocks[i],)).start()
+                    threading.Thread(target=loop_recconection, args=(clock.list_clocks[i],)).start()
         
     return None
 
@@ -82,10 +122,29 @@ def find_first_clock(clock: object):
 
                 except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
                     clock.set_trying_recconection(clock.list_clocks[i], True)
-                    threading.Thread(target=loop_reconnection, args=(clock.list_clocks[i],)).start()
+                    threading.Thread(target=loop_recconection, args=(clock.list_clocks[i],)).start()
 
 
 def leader_is_elected(clock: object):
 
-    response = {"Bem sucedido": clock.leader_is_elected, "IP líder": ip_leader}
+    response = {"Bem sucedido": clock.leader_is_elected, "IP líder": clock.ip_leader}
     return response
+
+
+def claim_leadership(clock: object, data: dict):
+
+    if clock.leader_is_elected == False:
+        clock.set_leader_is_elected(True)
+        clock.set_ip_leader(data["IP líder"])
+    else:
+        # FAZER O CASO DO LÍDER JÁ ESTAR ELEITO
+        pass
+
+    response = {"Bem sucedido": True}
+    return response
+
+
+#Fazer detecção de falha
+def problem_detected_leadership(clock: object):
+    first_clock = find_first_clock(clock) 
+
