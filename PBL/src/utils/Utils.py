@@ -23,8 +23,8 @@ def send_request(clock: object, data_request: dict):
         elif data_request["Método HTTP"] == "PATCH":
             response = requests.patch(data_request["URL"], json=data_request["Dados"], timeout=5)
 
-        #if url == (f"http://{data_request["IP do relógio"]}:2500/ready_for_connection") and response.status_code != 200:
-        if url == (f"http://{clock.ip_clock}:{data_request["IP do relógio"]}/ready_for_connection") and response.status_code != 200:
+        #if data_request["URL"] == (f"http://{data_request['IP do relógio']}:2500/ready_for_connection") and response.status_code != 200:
+        if data_request["URL"] == (f"http://{clock.ip_clock}:{data_request['IP do relógio']}/ready_for_connection") and response.status_code != 200:
             raise requests.exceptions.ConnectionError    
 
     except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
@@ -57,7 +57,8 @@ def loop_recconection(clock: object, ip_clock: str):
                 raise requests.exceptions.ConnectionError
         
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
-            time.sleep(1)
+            #time.sleep(1)
+            pass
     
     print("Reconectou: ", ip_clock)
 
