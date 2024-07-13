@@ -1,3 +1,4 @@
+from impl.Election_impl import election
 from utils.Utils import create_result_structure, send_request
 import threading
 
@@ -37,8 +38,10 @@ def add_clocks(clock: object, list_clocks: list):
                 loop = True
 
     clock.sort_list_clocks()
-                
+    print("Lista ordenada: ", clock.list_clocks)
     print("Dicionário de resultados: ", result_dict)
+
+    election(clock)
 
 
 
