@@ -23,6 +23,10 @@ def send_request(clock: object, data_request: dict):
         elif data_request["Método HTTP"] == "PATCH":
             response = requests.patch(data_request["URL"], json=data_request["Dados"], timeout=5)
 
+        #if url == (f"http://{data_request["IP do relógio"]}:2500/ready_for_connection") and response.status_code != 200:
+        if url == (f"http://{clock.ip_clock}:{data_request["IP do relógio"]}/ready_for_connection") and response.status_code != 200:
+            raise requests.exceptions.ConnectionError    
+
     except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
         if clock.trying_recconection[data_request["IP do relógio"]] == False:
             clock.set_trying_recconection(data_request["IP do relógio"], True)
@@ -47,8 +51,8 @@ def loop_recconection(clock: object, ip_clock: str):
 
             if status_code == 200:
                 loop = False
-                with clock.lock:
-                    clock.trying_recconection[ip_clock] = False
+                clock.set_trying_recconection(ip_clock, False)
+                
             else:
                 raise requests.exceptions.ConnectionError
         

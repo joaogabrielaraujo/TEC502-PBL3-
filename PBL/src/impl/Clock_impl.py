@@ -1,4 +1,4 @@
-from Utils import create_result_structure, send_request
+from utils.Utils import create_result_structure, send_request
 import threading
 
 
@@ -35,11 +35,10 @@ def add_clocks(clock: object, list_clocks: list):
         for key in result_dict.keys():
             if result_dict[key]["Terminado"] == False:
                 loop = True
+
+    clock.sort_list_clocks()
                 
-
     print("Dicionário de resultados: ", result_dict)
-
-    clock.set_ready_for_connection(True)
 
 
 

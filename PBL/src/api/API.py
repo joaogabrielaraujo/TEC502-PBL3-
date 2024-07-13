@@ -1,8 +1,8 @@
 import threading
 from flask import Flask, jsonify, request
-from Clock import Clock
-import Election
-import Clock_impl
+from model.Clock import Clock
+import impl.Clock_impl as Clock_impl
+import impl.Election_impl as Election_impl
 
 
 app = Flask(__name__)
@@ -12,6 +12,17 @@ clock = Clock()
 def ready_for_connection():
 
     response = Clock_impl.ready_for_connection(clock)
+      
+    if response["Bem sucedido"] == True:
+        return jsonify(response), 200
+    else:
+        return jsonify(response), 404
+
+
+@app.route('/leader_is_elected', methods=['GET'])
+def leader_is_elected():
+
+    response = Election_impl.leader_is_elected(clock)
       
     if response["Bem sucedido"] == True:
         return jsonify(response), 200
