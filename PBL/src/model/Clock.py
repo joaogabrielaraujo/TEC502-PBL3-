@@ -13,11 +13,12 @@ class Clock:
         #self.list_clocks = [self.ip_clock]
         self.list_clocks = [self.port]
         self.trying_recconection = {}
-        self.time = 10
+        self.time = 5
         self.drift = 0
 
         self.leader_is_elected = False
         self.ip_leader = None
+        self.problem_detected = False
 
         self.ready_for_connection = False
         self.lock = threading.Lock()
@@ -35,25 +36,31 @@ class Clock:
     def set_trying_recconection(self, ip_clock: str, boolean: bool):
         with self.lock:
             self.trying_recconection[ip_clock] = boolean
-            print("Tentando reconexão com ", ip_clock, ": ", boolean)
+            print("\nTentando reconexão com ", ip_clock, ": ", boolean)
 
     
     def set_ready_for_connection(self, ready_for_connection: bool):
         with self.lock:
             self.ready_for_connection = ready_for_connection
-            print("Pronto para conexão: ", ready_for_connection)
+            print("\nPronto para conexão: ", ready_for_connection)
 
     
     def set_leader_is_elected(self, leader_is_elected: bool):
         with self.lock:
             self.leader_is_elected = leader_is_elected
-            print("Líder está eleito: ", leader_is_elected)
+            print("\nLíder está eleito: ", leader_is_elected)
 
     
     def set_ip_leader(self, ip_leader: str):
         with self.lock:
             self.ip_leader = ip_leader
-            print("IP do líder: ", ip_leader)
+            print("\nIP do líder: ", ip_leader)
+
+
+    def set_problem_detected(self, problem_detected: bool):
+        with self.lock:
+            self.problem_detected = problem_detected
+            print("\nProblema detectado: ", problem_detected)
 
 
     def get_clocks_on(self):
@@ -75,4 +82,9 @@ class Clock:
                     insert_index = j
             self.list_clocks.insert(insert_index, current_value)
 
-    
+
+    def reset_atributes_leadership(self):
+        with self.lock:
+            self.leader_is_elected = False
+            self.ip_leader = None
+            print("\nResetei coisas do líder\n")
