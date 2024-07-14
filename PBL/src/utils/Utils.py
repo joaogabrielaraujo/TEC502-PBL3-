@@ -13,8 +13,9 @@ def create_result_structure(quantity: int):
     return result_dict
 
 
+#Função para enviar requisições baseado no tipo de rota que necessita desses dados
 def send_request(clock: object, data_request: dict):
-    
+
     try:
         if data_request["Método HTTP"] == "GET":
             response = requests.get(data_request["URL"], json=data_request["Dados"], timeout=5)
@@ -32,6 +33,10 @@ def send_request(clock: object, data_request: dict):
             clock.set_trying_recconection(data_request["IP do relógio"], True)
         threading.Thread(target=loop_recconection, args=(clock, data_request["IP do relógio"],)).start()
         response = {"Bem sucedido": False, "Justificativa": "Banco desconectado"}
+
+    #print("\nResposta do requisição: ", response)
+    #print("Dados de tudo: ", data_request["Dicionário de resultados"])
+    #print("Dados da requisição: ", data_request["Dicionário de resultados"][data_request["Índice"]])
 
     data_request["Dicionário de resultados"][data_request["Índice"]]["Resposta"] = response
     #Relógio terminou de responder e foi adicionado com sucesso 
