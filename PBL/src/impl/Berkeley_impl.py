@@ -3,6 +3,7 @@ from utils.Utils import loop_recconection, create_result_structure, send_request
 import time
 import threading
 
+
 def colect_times(Clock: list[Clock]):
     list_times = []
     for i in range(len(Clock)):
@@ -92,28 +93,41 @@ def request_times(clock: object):
 
     for ip_clock in clocks_on:
         index = clocks_on.index(ip_clock)
-        result_dict[index]["Resposta"] = result_dict[index]["Resposta"].json()
-        dict_times[ip_clock] = result_dict[index]["Resposta"]["Tempo"]
+        #print("\nO erro vai ta aqui: ", result_dict[index], "\n")
+
+        if type(result_dict[index]["Resposta"]) != dict:
+            result_dict[index]["Resposta"] = result_dict[index]["Resposta"].json()
+
+        if result_dict[index]["Resposta"]["Bem sucedido"] == True:
+            dict_times[ip_clock] = result_dict[index]["Resposta"]["Tempo"]
 
     return dict_times
         
 
 def request_time(clock: object, data: dict):
 
-    if clock.ip_leader == None:
-        clock.set_leader_is_elected(True)
-        clock.set_ip_leader(data["IP líder"])
+    if clock.problem_detected == False:
 
-        response = {"Bem sucedido": True, "Tempo": clock.time}
-        return response
+        if clock.ip_leader == None:
+            clock.set_leader_is_elected(True)
+            clock.set_ip_leader(data["IP líder"])
 
-    elif data["IP líder"] == clock.ip_leader:
-        response = {"Bem sucedido": True, "Tempo": clock.time}
+            response = {"Bem sucedido": True, "Tempo": clock.time}
+            return response
+
+        elif data["IP líder"] == clock.ip_leader:
+            response = {"Bem sucedido": True, "Tempo": clock.time}
+            return response
+        
+        else: 
+            from impl.Election_impl import problem_detected_leadership
+            threading.Thread(target=problem_detected_leadership, args=(clock,)).start()
+            response = {"Bem sucedido": False}
+            return response
+        
+    else:
+        response = {"Bem sucedido": False}
         return response
-    
-    else: 
-        # Fazer caso do líder não bater
-        pass
     
     
 
