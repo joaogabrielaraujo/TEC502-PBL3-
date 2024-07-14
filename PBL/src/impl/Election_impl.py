@@ -6,6 +6,7 @@ from impl.Berkeley_impl import syncronize_clocks
 
 
 def election(clock: object):
+    print("\nVoltei pro início\n")
     # Setando o clock atual como pronto para conexão
     clock.set_ready_for_connection(True)
 
@@ -39,17 +40,17 @@ def election(clock: object):
                 else:
                     clocks_on = clock.get_clocks_on()
                     result_dict = create_result_structure(len(clocks_on))
-                    
+                    #os comentários abaixo são para fazer a troca na hora de testar no larsid 
                     for i in range(len(clocks_on)):
 
                         #url = (f"http://{clocks_on[i]}:2500/claim_leadership")
                         url = (f"http://{clock.ip_clock}:{clocks_on[i]}/claim_leadership")
-
-                        '''all_data_request = {"URL": url, "IP do relógio": clocks_on[i], "Dados": {"IP líder": clock.ip_clock}, "Método HTTP": "GET", "Dicionário de resultados": result_dict, "Índice": i}'''
+                        
+                        '''all_data_request = {"URL": url, "IP do relógio": clocks_on[i], "Dados": {"IP líder": clock.ip_clock}, "Método HTTP": "POST", "Dicionário de resultados": result_dict, "Índice": i}'''
                         all_data_request = {"URL": url, 
                                             "IP do relógio": clocks_on[i], 
                                             "Dados": {"IP líder": clock.port}, 
-                                            "Método HTTP": "GET", 
+                                            "Método HTTP": "POST", 
                                             "Dicionário de resultados": result_dict, 
                                             "Índice": i}
                     
@@ -72,7 +73,7 @@ def election(clock: object):
 
     print("Saí do loop!")
 
-
+#Função para encontrar o próximo relógio
 def find_next_clock(clock: object):
 
     for i in range(len(clock.list_clocks)):
@@ -97,7 +98,7 @@ def find_next_clock(clock: object):
         
     return None
 
-
+# Função para encontrar o relógio de maior prioridade
 def find_first_clock(clock: object):
 
     for i in range(len(clock.list_clocks)):
@@ -133,12 +134,13 @@ def leader_is_elected(clock: object):
 
 def claim_leadership(clock: object, data: dict):
 
-    if clock.leader_is_elected == False:
-        clock.set_leader_is_elected(True)
-        clock.set_ip_leader(data["IP líder"])
-    else:
-        # FAZER O CASO DO LÍDER JÁ ESTAR ELEITO
-        pass
+    if clock.problem_detected == False:
+
+        if clock.leader_is_elected == False:
+            clock.set_leader_is_elected(True)
+            clock.set_ip_leader(data["IP líder"])
+        else:
+            threading.Thread(target=problem_detected_leadership, args=(clock,)).start()    
 
     response = {"Bem sucedido": True}
     return response
@@ -146,5 +148,98 @@ def claim_leadership(clock: object, data: dict):
 
 #Fazer detecção de falha
 def problem_detected_leadership(clock: object):
-    first_clock = find_first_clock(clock) 
+    print("\nDetectei um problema\n")
+    loop = True
+    while loop == True:
+        first_clock = find_first_clock(clock) 
 
+        #if first_clock == clock.ip_clock:
+        if first_clock == clock.port:
+            #threading.Thread(target=treat_problem_leadership, args=(clock, "",)).start() 
+            threading.Thread(target=treat_problem_leadership, args=(clock, "",)).start() 
+            loop = False
+
+        else:
+            try:
+                #data = {"Lidar com o problema": True, "IP remetente": clock.ip_clock}
+                data = {"Lidar com o problema": True, "IP remetente": clock.port}
+                #url = (f"http://{first_clock}:2500/problem_alert_leadership")
+                url = (f"http://{clock.ip_clock}:{first_clock}/problem_alert_leadership")
+
+                status_code = requests.post(url, json=data, timeout=5).status_code
+
+                if status_code == 200: 
+                    threading.Thread(target=wait_blocking_time, args=(clock,)).start()    
+
+                loop = False         
+
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
+                clock.set_trying_recconection(first_clock, True)
+                threading.Thread(target=loop_recconection, args=(first_clock,)).start()
+
+
+def receive_problem_alert(clock: object, data: dict):
+    print("\nMe avisaram do problema\n")
+    if data["Lidar com o problema"] == True:
+        if clock.problem_detected == True:
+            response = {"Bem sucedido": False}
+            return response
+        else: 
+            threading.Thread(target=treat_problem_leadership, args=(clock, data["IP remetente"],)).start() 
+
+    else:  
+        threading.Thread(target=wait_blocking_time, args=(clock,)).start()  
+
+    response = {"Bem sucedido": True}
+    return response
+
+
+def treat_problem_leadership(clock: object, ip_sender: str):
+    print("\nTo tratando\n")
+    clock.reset_atributes_leadership()
+    clock.set_problem_detected(True)  
+
+    clocks_on = clock.get_clocks_on()
+    if ip_sender == "":
+        quantity = len(clocks_on)
+    else:
+        if len(clocks_on) != 0:
+            quantity = len(clocks_on) - 1
+    
+    result_dict = create_result_structure(quantity)
+
+    index = 0
+    for i in range(len(clocks_on)):
+        if clocks_on[i] != ip_sender:
+
+            #url = (f"http://{clocks_on[i]}:2500/problem_alert_leadership")
+            url = (f"http://{clock.ip_clock}:{clocks_on[i]}/problem_alert_leadership")
+
+            all_data_request = {"URL": url, 
+                                "IP do relógio": clocks_on[i], 
+                                "Dados": {"Lidar com o problema": False}, 
+                                "Método HTTP": "POST", 
+                                "Dicionário de resultados": result_dict, 
+                                "Índice": index}
+        
+            threading.Thread(target=send_request, args=(clock, all_data_request,)).start()
+
+            index += 1
+
+    loop = True
+    while loop:
+        loop = False
+        for key in result_dict.keys():
+            if result_dict[key]["Terminado"] == False:
+                loop = True
+
+    wait_blocking_time(clock)
+
+
+def wait_blocking_time(clock: object):
+    print("\nTo aguardando....\n")
+    clock.reset_atributes_leadership()
+    clock.set_problem_detected(True) 
+    time.sleep(5)
+    clock.set_problem_detected(False)
+    election(clock)
