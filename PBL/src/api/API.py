@@ -9,7 +9,7 @@ import impl.Berkeley_impl as Berkeley_impl
 app = Flask(__name__)
 clock = Clock()
 
-
+#Rota para verificar se o relógio está pronto para conexão chamando a função do Clock_impl
 @app.route('/ready_for_connection', methods=['GET'])
 def ready_for_connection():
 
@@ -20,7 +20,7 @@ def ready_for_connection():
     else:
         return jsonify(response), 404
 
-
+#Rota para verificar se o lider foi eleito chamando a função do Election_impl
 @app.route('/leader_is_elected', methods=['GET'])
 def leader_is_elected():
 
@@ -31,8 +31,8 @@ def leader_is_elected():
     else:
         return jsonify(response), 404
 
-
-@app.route('/claim_leadership', methods=['GET'])
+#Rota resposável por eleger o lider chamando a função do Election_impl
+@app.route('/claim_leadership', methods=['POST'])
 def claim_leadership():
 
     data = request.json
@@ -43,7 +43,7 @@ def claim_leadership():
     else:
         return jsonify(response), 404
 
-
+#Rota resposável por requerir o tempo do relógio chamando a função do Berkeley_impl
 @app.route('/request_time', methods=['GET'])
 def request_time():
 
@@ -54,6 +54,19 @@ def request_time():
         return jsonify(response), 200
     else:
         return jsonify(response), 404
+
+#Rota resposável por verifiar se houve algum problema com o lider chamando a função do Election_impl
+@app.route('/problem_alert_leadership', methods=['POST'])
+def problem_alert_leadership():
+
+    data = request.json
+    response = Election_impl.receive_problem_alert(clock, data)
+      
+    if response["Bem sucedido"] == True:
+        return jsonify(response), 200
+    else:
+        return jsonify(response), 404
+
 
 
 def start():
