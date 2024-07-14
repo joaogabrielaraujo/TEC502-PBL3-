@@ -25,3 +25,23 @@
     - Se ele não foi o relógio de maior prioridade, ele volta para o estado do tópico *(1)*, continuando nesse 
     loop de checagem até que algum relógio reivindique a liderança ou ele seja o de maior prioridade para 
     reivindicar;
+
+** CONTAGEM DE TEMPO
+    - sleep(0.01)
+    - Contadora = 100 99 98 1
+    - tempo += 1
+    - contadora vai ser resetada
+    - 0.1 ~
+
+** Sincronização dos relógios
+    - O lider fazer uma requisição para todos os relógios para pegar os hórarios deles
+    - Faz-se uma média dos hórarios 
+    - O lider envia para todos os relógios a média dos hórarios
+    - Cada relógio precisa fazer uma conta para saber como modificar seu proprio drift para se aproximar da média
+        - se a média for menor que o hórario interno de um relógio, 
+        ele precisa diminuir o drift afim de não se distanciar da média
+        - se a média for maior que o hórario interno de um relógio,
+        ele precisa aumentar o drift dele num dado intervalo de tempo para que ele alcance a média
+    - para o caso do local time ser maior que a média, ele precisa diminuir o drift de maneira proporcional
+    ou seja pegar a porcetagem da diferença de horários para desacelerar o relógio que está a frente 
+    
