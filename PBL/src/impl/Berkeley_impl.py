@@ -1,51 +1,8 @@
-from model.Clock import Clock
-from utils.Utils import loop_recconection, create_result_structure, send_request
+from utils.Utils import create_result_structure, send_request
 import time
 import threading
 
 
-def colect_times(Clock: list):
-    list_times = []
-    for i in range(len(Clock)):
-        list_times.append(Clock[i].time)
-    return list_times
-
-def colect_drifts(Clock: list):
-    list_drifts = []
-    for i in range(len(Clock)):
-        list_drifts.append(Clock[i].drift)
-    return list_drifts
-
-def getAvarageClockTime(Clock: list):
-    list_times = colect_times(Clock)
-    return sum(list_times)/len(list_times)
-
-
-def seconds_to_hms(seconds):
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    remaining_seconds = seconds % 60
-    return hours, minutes, remaining_seconds
-
-def hms_to_seconds(hours, minutes, seconds):
-    return hours*3600 + minutes*60 + seconds
-   
-def syncronizeClocks(local_clock, average_time, sync_interval):
-    #lógica que está voltando no tempo
-    time_difference = average_time - local_clock.time
-
-    required_drift = time_difference/sync_interval
-
-    original_drift = local_clock.drift
-    local_clock.drift = required_drift
-
-    for _ in range(sync_interval):
-        local_clock.time.update_time(local_clock.drift)
-        time.sleep(1)
-    local_clock.drift = original_drift  # Restaurando o valor original do drift
-
-
-#######
 def syncronize_clocks(clock: object):
 
     #while clock.ip_leader == clock.ip_clock:
@@ -54,34 +11,55 @@ def syncronize_clocks(clock: object):
         #input("BLOQUEIO: ")
 
         dict_times = request_times(clock)
-        print("Dicionário de tempos: ", dict_times)
+        #print("Dicionário de tempos: ", dict_times)
 
         count_clocks = len(dict_times)
         if count_clocks > 1:
+            
             sum_times = 0
             list_clocks = []
+            list_times = []
             for key in dict_times.keys():
                 sum_times += dict_times[key]
                 list_clocks.append(key)
+                list_times.append(dict_times[key])
 
-            media = int(sum_times / count_clocks)
+            media = int((max(list_times) + min(list_times)) / 2)   
+            print("\nMEDIA: ", media, "\n")        
 
+            differences = []
+            all_clocks_synchronized = True
+            for i in range(count_clocks):
+                difference = media - dict_times[list_clocks[i]]
+                differences.append(difference)
+
+                if difference != 0:
+                    all_clocks_synchronized = False
+            
             result_dict = create_result_structure(count_clocks)
 
             for i in range(count_clocks):
                 
-                #url = (f"http://{list_clocks[i]}:2500/regulate_time")
-                url = (f"http://{clock.ip_clock}:{list_clocks[i]}/regulate_time")
+                data = {"Diferença": differences[i], "Tudo sincronizado": all_clocks_synchronized}
 
-                '''all_data_request = {"URL": url, "IP do relógio": list_clocks[i], "Dados": {"Média": media}, "Método HTTP": "POST", "Dicionário de resultados": result_dict, "Índice": i}'''
-                all_data_request = {"URL": url, 
-                                    "IP do relógio": list_clocks[i], 
-                                    "Dados": {"Diferença": media - dict_times[list_clocks[i]]}, 
-                                    "Método HTTP": "POST", 
-                                    "Dicionário de resultados": result_dict, 
-                                    "Índice": i}
-            
-                threading.Thread(target=send_request, args=(clock, all_data_request,)).start()
+                if list_clocks[i] != clock.port:
+
+                    #url = (f"http://{list_clocks[i]}:2500/regulate_time")
+                    url = (f"http://{clock.ip_clock}:{list_clocks[i]}/regulate_time")
+
+                    '''all_data_request = {"URL": url, "IP do relógio": list_clocks[i], "Dados": {"Média": media}, "Método HTTP": "POST", "Dicionário de resultados": result_dict, "Índice": i}'''
+                    all_data_request = {"URL": url, 
+                                        "IP do relógio": list_clocks[i], 
+                                        "Dados": data, 
+                                        "Método HTTP": "POST", 
+                                        "Dicionário de resultados": result_dict, 
+                                        "Índice": i}
+                
+                    threading.Thread(target=send_request, args=(clock, all_data_request,)).start()
+
+                else:
+                    threading.Thread(target=regulate_time, args=(clock, data,)).start()
+                    result_dict[i]["Terminado"] = True
 
             loop = True
             while loop:
@@ -90,11 +68,7 @@ def syncronize_clocks(clock: object):
                     if result_dict[key]["Terminado"] == False:
                         loop = True
 
-            
-
         time.sleep(5)
-
-
 
 
 def request_times(clock: object):
@@ -170,8 +144,58 @@ def request_time(clock: object, data: dict):
         return response
 
 
-def regulate_time(clock: object, data: dict):
-    pass
-    
+def receive_regulate_time(clock: object, data: dict):
 
-#######
+    threading.Thread(target=regulate_time, args=(clock, data,)).start()
+
+    response = {"Bem sucedido": True}
+    return response
+
+
+def regulate_time(clock: object, data: dict):
+    print("\nRegulando...\n")
+    print("Diferença recebida: ", data["Diferença"])
+
+    print("Drift: ", clock.drift)
+
+    if data["Diferença"] > 0:
+
+        if data["Diferença"] >= 5:
+
+            #new_drift = (2.5 / data["Diferença"])
+            clock.set_regulate_base_count(250 / data["Diferença"])
+
+        else:
+
+            clock.set_regulate_base_count(100 - (data["Diferença"] * 10))
+
+            if data["Diferença"] <= 2:
+                clock.set_time(clock.time + 1)
+
+        clock.set_regulating_time(True)
+
+    elif data["Diferença"] < 0:
+
+        if data["Diferença"] <= -5:
+            print("\nDIFERENÇA GRANDE\n")
+            clock.set_regulate_base_count(450)
+
+        else:
+            print("\nDIFERENÇA PEQUENA\n")
+            clock.set_regulate_base_count(((-1) * (data["Diferença"] * 10)) + 100)
+            print("\nBase regulada: ", clock.regulate_base_count, "\n")
+
+        clock.set_regulating_time(True)
+    
+    elif data["Tudo sincronizado"] == False:
+
+        print("\nDIFERENÇA CENTRAL\n")
+        clock.set_regulate_base_count(100)
+        print("\nBase regulada: ", clock.regulate_base_count, "\n")
+
+        clock.set_regulating_time(True)
+
+
+    time.sleep(5)
+    
+    clock.set_regulating_time(False)
