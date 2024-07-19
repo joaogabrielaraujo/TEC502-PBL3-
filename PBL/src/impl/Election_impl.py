@@ -263,7 +263,7 @@ def periodic_leadership_check(clock: object):
 
                     if status_code == 200:
                         clock.set_time_without_leader_request(0)
-                        print("\nAinda ta ativo!!\n")
+                        #print("\nAinda ta ativo!!\n")
                     else:
                         raise requests.exceptions.ConnectionError
 
@@ -275,4 +275,3 @@ def periodic_leadership_check(clock: object):
                     clock.set_problem_detected(True) 
 
         time.sleep(1)
-        
