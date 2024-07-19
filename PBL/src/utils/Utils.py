@@ -65,7 +65,7 @@ def loop_recconection(clock: object, ip_clock: str):
             #time.sleep(1)
             pass
     
-    print("Reconectou: ", ip_clock)
+    #print("Reconectou: ", ip_clock)
 
 
     
