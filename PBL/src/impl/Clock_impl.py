@@ -10,14 +10,23 @@ def ready_for_connection(clock: object):
     response = {"Bem sucedido": clock.ready_for_connection}
     return response
 
+
 def start_count(clock: object):
     counter = clock.drift * 100
     while True:
         time.sleep(0.01)
         counter -= 1
         if counter == 0:
-            clock.time += 1
+            clock.set_time(clock.time + 1)
             counter = clock.drift * 100
+
+
+def change_time(clock: object, data: dict):
+    clock.set_time(data["Horário"])
+    clock.set_drift(data["Drift"])
+
+    response = {"Bem sucedido": True}
+    return response
 
 
 def add_clocks(clock: object, list_clocks: list):
