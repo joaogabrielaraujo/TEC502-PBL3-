@@ -68,12 +68,36 @@ def problem_alert_leadership():
         return jsonify(response), 404
 
 
+@app.route('/regulate_time', methods=['POST'])
+def regulate_time():
+
+    data = request.json
+    response = Berkeley_impl.regulate_time(clock, data)
+      
+    if response["Bem sucedido"] == True:
+        return jsonify(response), 200
+    else:
+        return jsonify(response), 404
+
+
+@app.route('/change_time', methods=['PATCH'])
+def change_time():
+
+    data = request.json
+    response = Clock_impl.change_time(clock, data)
+      
+    if response["Bem sucedido"] == True:
+        return jsonify(response), 200
+    else:
+        return jsonify(response), 404
+
 
 def start():
     list_clocks = ["2501","2500","2503","2502"]
     list_clocks.remove(clock.port)
     print("Lista de relógios: ", list_clocks)
     
+    threading.Thread(target=Election_impl.periodic_leadership_check, args=(clock,)).start()   
     Thread_Add_Clocks = threading.Thread(target=Clock_impl.add_clocks,args=(clock, list_clocks,)).start()
     app.run(host=clock.ip_clock, port=int(clock.port))
 
