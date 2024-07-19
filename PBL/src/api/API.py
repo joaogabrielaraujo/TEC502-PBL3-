@@ -72,7 +72,7 @@ def problem_alert_leadership():
 def regulate_time():
 
     data = request.json
-    response = Berkeley_impl.regulate_time(clock, data)
+    response = Berkeley_impl.receive_regulate_time(clock, data)
       
     if response["Bem sucedido"] == True:
         return jsonify(response), 200
@@ -97,6 +97,7 @@ def start():
     list_clocks.remove(clock.port)
     print("Lista de relógios: ", list_clocks)
     
+    threading.Thread(target=Clock_impl.start_count, args=(clock,)).start()  
     threading.Thread(target=Election_impl.periodic_leadership_check, args=(clock,)).start()   
     Thread_Add_Clocks = threading.Thread(target=Clock_impl.add_clocks,args=(clock, list_clocks,)).start()
     app.run(host=clock.ip_clock, port=int(clock.port))
