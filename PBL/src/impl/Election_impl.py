@@ -94,7 +94,7 @@ def find_next_clock(clock: object):
 
                 except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
                     clock.set_trying_recconection(clock.list_clocks[i], True)
-                    threading.Thread(target=loop_recconection, args=(clock.list_clocks[i],)).start()
+                    threading.Thread(target=loop_recconection, args=(clock, clock.list_clocks[i],)).start()
         
     return None
 
@@ -123,7 +123,7 @@ def find_first_clock(clock: object):
 
                 except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
                     clock.set_trying_recconection(clock.list_clocks[i], True)
-                    threading.Thread(target=loop_recconection, args=(clock.list_clocks[i],)).start()
+                    threading.Thread(target=loop_recconection, args=(clock, clock.list_clocks[i],)).start()
 
 
 def leader_is_elected(clock: object):
@@ -175,7 +175,7 @@ def problem_detected_leadership(clock: object):
 
             except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
                 clock.set_trying_recconection(first_clock, True)
-                threading.Thread(target=loop_recconection, args=(first_clock,)).start()
+                threading.Thread(target=loop_recconection, args=(clock, first_clock,)).start()
 
 
 def receive_problem_alert(clock: object, data: dict):
@@ -243,3 +243,36 @@ def wait_blocking_time(clock: object):
     time.sleep(5)
     clock.set_problem_detected(False)
     election(clock)
+
+
+def periodic_leadership_check(clock: object):
+    while True:
+
+        #if clock.problem_detected == False and clock.ip_leader != clock.ip_clock  and clock.leader_is_elected == True:
+        if clock.problem_detected == False and clock.ip_leader != clock.port and clock.leader_is_elected == True:
+            clock.set_time_without_leader_request(clock.time_without_leader_request + 1)
+
+            if clock.time_without_leader_request > 10:
+                try:
+                    #url = (f"http://{clock.ip_leader}:2500/leader_is_elected")
+                    url = (f"http://{clock.ip_clock}:{clock.ip_leader}/leader_is_elected")
+
+                    response = requests.get(url, timeout=5)
+                    status_code = response.status_code
+                    response = response.json()
+
+                    if status_code == 200:
+                        clock.set_time_without_leader_request(0)
+                        print("\nAinda ta ativo!!\n")
+                    else:
+                        raise requests.exceptions.ConnectionError
+
+                except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
+                    clock.set_trying_recconection(clock.ip_leader, True)
+                    threading.Thread(target=loop_recconection, args=(clock, clock.ip_leader,)).start()
+                    threading.Thread(target=problem_detected_leadership, args=(clock,)).start()   
+                    clock.reset_atributes_leadership()
+                    clock.set_problem_detected(True) 
+
+        time.sleep(1)
+        
