@@ -4,19 +4,19 @@ import time
 import threading
 
 
-def colect_times(Clock: list[Clock]):
+def colect_times(Clock: list):
     list_times = []
     for i in range(len(Clock)):
         list_times.append(Clock[i].time)
     return list_times
 
-def colect_drifts(Clock: list[Clock]):
+def colect_drifts(Clock: list):
     list_drifts = []
     for i in range(len(Clock)):
         list_drifts.append(Clock[i].drift)
     return list_drifts
 
-def getAvarageClockTime(Clock: list[Clock]):
+def getAvarageClockTime(Clock: list):
     list_times = colect_times(Clock)
     return sum(list_times)/len(list_times)
 
@@ -51,8 +51,46 @@ def syncronize_clocks(clock: object):
     #while clock.ip_leader == clock.ip_clock:
     while clock.ip_leader == clock.port:
 
+        #input("BLOQUEIO: ")
+
         dict_times = request_times(clock)
         print("Dicionário de tempos: ", dict_times)
+
+        count_clocks = len(dict_times)
+        if count_clocks > 1:
+            sum_times = 0
+            list_clocks = []
+            for key in dict_times.keys():
+                sum_times += dict_times[key]
+                list_clocks.append(key)
+
+            media = int(sum_times / count_clocks)
+
+            result_dict = create_result_structure(count_clocks)
+
+            for i in range(count_clocks):
+                
+                #url = (f"http://{list_clocks[i]}:2500/regulate_time")
+                url = (f"http://{clock.ip_clock}:{list_clocks[i]}/regulate_time")
+
+                '''all_data_request = {"URL": url, "IP do relógio": list_clocks[i], "Dados": {"Média": media}, "Método HTTP": "POST", "Dicionário de resultados": result_dict, "Índice": i}'''
+                all_data_request = {"URL": url, 
+                                    "IP do relógio": list_clocks[i], 
+                                    "Dados": {"Diferença": media - dict_times[list_clocks[i]]}, 
+                                    "Método HTTP": "POST", 
+                                    "Dicionário de resultados": result_dict, 
+                                    "Índice": i}
+            
+                threading.Thread(target=send_request, args=(clock, all_data_request,)).start()
+
+            loop = True
+            while loop:
+                loop = False
+                for key in result_dict.keys():
+                    if result_dict[key]["Terminado"] == False:
+                        loop = True
+
+            
 
         time.sleep(5)
 
@@ -108,6 +146,8 @@ def request_time(clock: object, data: dict):
 
     if clock.problem_detected == False:
 
+        clock.set_time_without_leader_request(0)
+
         if clock.ip_leader == None:
             clock.set_leader_is_elected(True)
             clock.set_ip_leader(data["IP líder"])
@@ -128,7 +168,10 @@ def request_time(clock: object, data: dict):
     else:
         response = {"Bem sucedido": False}
         return response
-    
+
+
+def regulate_time(clock: object, data: dict):
+    pass
     
 
 #######
