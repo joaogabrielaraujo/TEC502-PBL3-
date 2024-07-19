@@ -8,18 +8,21 @@ class Clock:
     def __init__(self):
         self.ip_clock = socket.gethostbyname(socket.gethostname())
         #
-        self.port = "2503"
+        self.port = "2500"
         #
         #self.list_clocks = [self.ip_clock]
         self.list_clocks = [self.port]
         self.trying_recconection = {}
-        self.time = 5
-        self.drift = 1.0
+        self.time = 1
+        self.drift = 1
 
         self.leader_is_elected = False
         self.ip_leader = None
         self.time_without_leader_request = 0
         self.problem_detected = False
+
+        self.regulating_time = False
+        self.regulate_base_count = 1
 
         self.ready_for_connection = False
         self.lock = threading.Lock()
@@ -37,7 +40,7 @@ class Clock:
     def set_trying_recconection(self, ip_clock: str, boolean: bool):
         with self.lock:
             self.trying_recconection[ip_clock] = boolean
-            print("\nTentando reconexão com ", ip_clock, ": ", boolean)
+            #print("\nTentando reconexão com ", ip_clock, ": ", boolean)
 
 
     def set_time(self, time: int):
@@ -52,10 +55,20 @@ class Clock:
             print("\nDrift atual: ", self.drift)
 
     
+    def set_regulating_time(self, regulating_time: int):
+        with self.lock:
+            self.regulating_time = regulating_time
+
+
+    def set_regulate_base_count(self, regulate_base_count: int):
+        with self.lock:
+            self.regulate_base_count = regulate_base_count
+
+    
     def set_ready_for_connection(self, ready_for_connection: bool):
         with self.lock:
             self.ready_for_connection = ready_for_connection
-            print("\nPronto para conexão: ", ready_for_connection)
+            #print("\nPronto para conexão: ", ready_for_connection)
 
     
     def set_leader_is_elected(self, leader_is_elected: bool):
@@ -73,13 +86,13 @@ class Clock:
     def set_time_without_leader_request(self, time_without_leader_request: int):
         with self.lock:
             self.time_without_leader_request = time_without_leader_request
-            print("\nTempo sem requisição do líder: ", self.time_without_leader_request)
+            #print("\nTempo sem requisição do líder: ", self.time_without_leader_request)
 
 
     def set_problem_detected(self, problem_detected: bool):
         with self.lock:
             self.problem_detected = problem_detected
-            print("\nProblema detectado: ", problem_detected)
+            #print("\nProblema detectado: ", problem_detected)
 
 
     def get_clocks_on(self):
@@ -106,5 +119,5 @@ class Clock:
         with self.lock:
             self.leader_is_elected = False
             self.ip_leader = None
-            print("\nResetei coisas do líder\n")
+            #print("\nResetei coisas do líder\n")
     
