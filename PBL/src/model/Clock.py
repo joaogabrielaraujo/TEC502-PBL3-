@@ -14,10 +14,11 @@ class Clock:
         self.list_clocks = [self.port]
         self.trying_recconection = {}
         self.time = 5
-        self.drift = 0
+        self.drift = 1.0
 
         self.leader_is_elected = False
         self.ip_leader = None
+        self.time_without_leader_request = 0
         self.problem_detected = False
 
         self.ready_for_connection = False
@@ -38,6 +39,18 @@ class Clock:
             self.trying_recconection[ip_clock] = boolean
             print("\nTentando reconexão com ", ip_clock, ": ", boolean)
 
+
+    def set_time(self, time: int):
+        with self.lock:
+            self.time = time
+            print("\nTempo atual: ", self.time)
+
+
+    def set_drift(self, drift: float):
+        with self.lock:
+            self.drift = drift
+            print("\nDrift atual: ", self.drift)
+
     
     def set_ready_for_connection(self, ready_for_connection: bool):
         with self.lock:
@@ -55,6 +68,12 @@ class Clock:
         with self.lock:
             self.ip_leader = ip_leader
             print("\nIP do líder: ", ip_leader)
+
+
+    def set_time_without_leader_request(self, time_without_leader_request: int):
+        with self.lock:
+            self.time_without_leader_request = time_without_leader_request
+            print("\nTempo sem requisição do líder: ", self.time_without_leader_request)
 
 
     def set_problem_detected(self, problem_detected: bool):
@@ -88,3 +107,4 @@ class Clock:
             self.leader_is_elected = False
             self.ip_leader = None
             print("\nResetei coisas do líder\n")
+    
