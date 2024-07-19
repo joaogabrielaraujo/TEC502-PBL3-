@@ -12,13 +12,30 @@ def ready_for_connection(clock: object):
 
 
 def start_count(clock: object):
-    counter = clock.drift * 100
+    count = clock.drift * 100
+    actual_drift = clock.drift
     while True:
+
+        if clock.regulating_time == False:
+
+            if clock.drift != actual_drift:
+                actual_drift = clock.drift
+                count = clock.drift * 100
+                clock.set_time(clock.time + 1)
+
+            count -= 1
+            if count <= 0:
+                clock.set_time(clock.time + 1)
+                count = clock.drift * 100
+
+        else:
+
+            count -= 1
+            if count <= 0:
+                clock.set_time(clock.time + 1)
+                count = clock.regulate_base_count
+
         time.sleep(0.01)
-        counter -= 1
-        if counter == 0:
-            clock.set_time(clock.time + 1)
-            counter = clock.drift * 100
 
 
 def change_time(clock: object, data: dict):
