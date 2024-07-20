@@ -68,7 +68,13 @@ def syncronize_clocks(clock: object):
                     if result_dict[key]["Terminado"] == False:
                         loop = True
 
-        time.sleep(5)
+            time.sleep(5)
+        
+        else:
+
+            from impl.Election_impl import election
+            clock.reset_atributes_leadership()
+            threading.Thread(target=election, args=(clock,)).start()
 
 
 def request_times(clock: object):
