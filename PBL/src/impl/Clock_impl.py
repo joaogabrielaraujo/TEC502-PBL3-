@@ -30,10 +30,17 @@ def start_count(clock: object):
 
         else:
 
-            count -= 1
-            if count <= 0:
-                clock.set_time(clock.time + 1)
-                count = clock.regulate_base_count
+            if clock.regulate_base_count != 0:
+
+                count -= 1
+                if count <= 0:
+                    clock.set_time(clock.time + 1)
+                    count = clock.regulate_base_count
+
+            else:
+                count = clock.drift * 100
+                clock.set_regulating_time(False)
+
 
         time.sleep(0.01)
 
@@ -55,8 +62,8 @@ def add_clocks(clock: object, list_clocks: list):
 
         clock.add_clock(list_clocks[i])
 
-        #url = (f"http://{ip_clock}:2500/ready_for_connection")
-        url = (f"http://{clock.ip_clock}:{list_clocks[i]}/ready_for_connection")
+        url = (f"http://{list_clocks[i]}:2500/ready_for_connection")
+        #url = (f"http://{clock.ip_clock}:{list_clocks[i]}/ready_for_connection")
 
         all_data_request = {"URL": url,
                             "IP do relógio": list_clocks[i],

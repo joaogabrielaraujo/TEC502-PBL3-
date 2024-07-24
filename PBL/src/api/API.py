@@ -1,12 +1,12 @@
 import threading
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from model.Clock import Clock
 import impl.Clock_impl as Clock_impl
 import impl.Election_impl as Election_impl
 import impl.Berkeley_impl as Berkeley_impl
 
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 clock = Clock()
 
 #Rota para verificar se o relógio está pronto para conexão chamando a função do Clock_impl
@@ -91,16 +91,58 @@ def change_time():
     else:
         return jsonify(response), 404
 
+@app.route('/')
+def home_page():
+    return render_template('index.html')
+
+@app.route('/get_clock', methods=['GET'])
+def get_clock():
+    try:
+        current_time = clock.get_current_time()
+        leader= clock.ip_leader
+        ip = clock.ip_clock
+        return jsonify(time=current_time,leader= leader, ip=ip), 200
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+@app.route('/update_time', methods=['POST'])
+def update_time():
+    data = request.get_json()
+    new_time = data.get('time')
+    if clock.set_time_interface(new_time):
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False)
+
+@app.route('/update_drift', methods=['POST'])
+def update_drift():
+    data = request.get_json()
+    new_drift = data.get('drift')
+    if clock.set_drift_interface(new_drift):
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False)
+
 
 def start():
-    list_clocks = ["2501","2500","2503","2502"]
-    list_clocks.remove(clock.port)
+
+    print("\nIP atual: ", clock.ip_clock)
+    quantity_clocks = int(input("\nQuantidade de relógios: "))
+
+    list_clocks = []
+    print()
+    for i in range (quantity_clocks):
+
+        ip_clock = input("IP do relógio: ")
+        list_clocks.append(ip_clock)
+
+    list_clocks.remove(clock.ip_clock)
     print("Lista de relógios: ", list_clocks)
     
     threading.Thread(target=Clock_impl.start_count, args=(clock,)).start()  
     threading.Thread(target=Election_impl.periodic_leadership_check, args=(clock,)).start()   
-    Thread_Add_Clocks = threading.Thread(target=Clock_impl.add_clocks,args=(clock, list_clocks,)).start()
-    app.run(host=clock.ip_clock, port=int(clock.port))
+    threading.Thread(target=Clock_impl.add_clocks,args=(clock, list_clocks,)).start()
+    app.run(host='0.0.0.0', port=2500)
 
 if __name__ == '__main__':
     start()

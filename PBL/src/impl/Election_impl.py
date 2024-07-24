@@ -18,16 +18,16 @@ def election(clock: object):
         first_clock = find_first_clock(clock)
         print("Relógio de maior prioridade: ", first_clock)
 
-        #if first_clock == clock.ip_clock:
-        if first_clock == clock.port:
+        if first_clock == clock.ip_clock:
+        #if first_clock == clock.port:
 
             next_clock = find_next_clock(clock)
             print("Próximo relógio: ", next_clock)
 
             if next_clock != None:
 
-                #url = (f"http://{next_clock}:2500/leader_is_elected")
-                url = (f"http://{clock.ip_clock}:{next_clock}/leader_is_elected")
+                url = (f"http://{next_clock}:2500/leader_is_elected")
+                #url = (f"http://{clock.ip_clock}:{next_clock}/leader_is_elected")
 
                 response = requests.get(url, timeout=5)
                 status_code = response.status_code
@@ -43,13 +43,12 @@ def election(clock: object):
                     #os comentários abaixo são para fazer a troca na hora de testar no larsid 
                     for i in range(len(clocks_on)):
 
-                        #url = (f"http://{clocks_on[i]}:2500/claim_leadership")
-                        url = (f"http://{clock.ip_clock}:{clocks_on[i]}/claim_leadership")
+                        url = (f"http://{clocks_on[i]}:2500/claim_leadership")
+                        #url = (f"http://{clock.ip_clock}:{clocks_on[i]}/claim_leadership")
                         
-                        '''all_data_request = {"URL": url, "IP do relógio": clocks_on[i], "Dados": {"IP líder": clock.ip_clock}, "Método HTTP": "POST", "Dicionário de resultados": result_dict, "Índice": i}'''
                         all_data_request = {"URL": url, 
                                             "IP do relógio": clocks_on[i], 
-                                            "Dados": {"IP líder": clock.port}, 
+                                            "Dados": {"IP líder": clock.ip_clock}, 
                                             "Método HTTP": "POST", 
                                             "Dicionário de resultados": result_dict, 
                                             "Índice": i}
@@ -64,8 +63,8 @@ def election(clock: object):
                                 loop = True
                     
                     clock.set_leader_is_elected(True)
-                    # clock.set_ip_leader(clock.ip_clock)
-                    clock.set_ip_leader(clock.port)
+                    clock.set_ip_leader(clock.ip_clock)
+                    #clock.set_ip_leader(clock.port)
 
                     threading.Thread(target=syncronize_clocks, args=(clock,)).start()
                         
@@ -78,14 +77,14 @@ def find_next_clock(clock: object):
 
     for i in range(len(clock.list_clocks)):
 
-        #if clock.list_clocks[i] != clock.ip_clock:
-        if clock.list_clocks[i] != clock.port:
+        if clock.list_clocks[i] != clock.ip_clock:
+        #if clock.list_clocks[i] != clock.port:
         
             if clock.trying_recconection[clock.list_clocks[i]] == False:
 
                 try:
-                    #url = (f"http://{clock.list_clocks[i]}:2500/ready_for_connection")
-                    url = (f"http://{clock.ip_clock}:{clock.list_clocks[i]}/ready_for_connection")
+                    url = (f"http://{clock.list_clocks[i]}:2500/ready_for_connection")
+                    #url = (f"http://{clock.ip_clock}:{clock.list_clocks[i]}/ready_for_connection")
 
                     status_code = requests.get(url, timeout=5).status_code
 
@@ -103,18 +102,18 @@ def find_first_clock(clock: object):
 
     for i in range(len(clock.list_clocks)):
 
-        #if clock.list_clocks[i] == clock.ip_clock:
-        if clock.list_clocks[i] == clock.port:
-            #return clock.ip_clock
-            return clock.port 
+        if clock.list_clocks[i] == clock.ip_clock:
+        #if clock.list_clocks[i] == clock.port:
+            return clock.ip_clock
+            #return clock.port 
         
         else:
 
             if clock.trying_recconection[clock.list_clocks[i]] == False:
 
                 try:
-                    #url = (f"http://{clock.list_clocks[i]}:2500/ready_for_connection")
-                    url = (f"http://{clock.ip_clock}:{clock.list_clocks[i]}/ready_for_connection")
+                    url = (f"http://{clock.list_clocks[i]}:2500/ready_for_connection")
+                    #url = (f"http://{clock.ip_clock}:{clock.list_clocks[i]}/ready_for_connection")
 
                     status_code = requests.get(url, timeout=5).status_code
 
@@ -153,18 +152,18 @@ def problem_detected_leadership(clock: object):
     while loop == True:
         first_clock = find_first_clock(clock) 
 
-        #if first_clock == clock.ip_clock:
-        if first_clock == clock.port:
+        if first_clock == clock.ip_clock:
+        #if first_clock == clock.port:
             #threading.Thread(target=treat_problem_leadership, args=(clock, "",)).start() 
             threading.Thread(target=treat_problem_leadership, args=(clock, "",)).start() 
             loop = False
 
         else:
             try:
-                #data = {"Lidar com o problema": True, "IP remetente": clock.ip_clock}
-                data = {"Lidar com o problema": True, "IP remetente": clock.port}
-                #url = (f"http://{first_clock}:2500/problem_alert_leadership")
-                url = (f"http://{clock.ip_clock}:{first_clock}/problem_alert_leadership")
+                data = {"Lidar com o problema": True, "IP remetente": clock.ip_clock}
+                #data = {"Lidar com o problema": True, "IP remetente": clock.port}
+                url = (f"http://{first_clock}:2500/problem_alert_leadership")
+                #url = (f"http://{clock.ip_clock}:{first_clock}/problem_alert_leadership")
 
                 status_code = requests.post(url, json=data, timeout=5).status_code
 
@@ -212,8 +211,8 @@ def treat_problem_leadership(clock: object, ip_sender: str):
     for i in range(len(clocks_on)):
         if clocks_on[i] != ip_sender:
 
-            #url = (f"http://{clocks_on[i]}:2500/problem_alert_leadership")
-            url = (f"http://{clock.ip_clock}:{clocks_on[i]}/problem_alert_leadership")
+            url = (f"http://{clocks_on[i]}:2500/problem_alert_leadership")
+            #url = (f"http://{clock.ip_clock}:{clocks_on[i]}/problem_alert_leadership")
 
             all_data_request = {"URL": url, 
                                 "IP do relógio": clocks_on[i], 
@@ -248,14 +247,14 @@ def wait_blocking_time(clock: object):
 def periodic_leadership_check(clock: object):
     while True:
 
-        #if clock.problem_detected == False and clock.ip_leader != clock.ip_clock  and clock.leader_is_elected == True:
-        if clock.problem_detected == False and clock.ip_leader != clock.port and clock.leader_is_elected == True:
+        if clock.problem_detected == False and clock.ip_leader != clock.ip_clock  and clock.leader_is_elected == True:
+        #if clock.problem_detected == False and clock.ip_leader != clock.port and clock.leader_is_elected == True:
             clock.set_time_without_leader_request(clock.time_without_leader_request + 1)
 
             if clock.time_without_leader_request > 10:
                 try:
-                    #url = (f"http://{clock.ip_leader}:2500/leader_is_elected")
-                    url = (f"http://{clock.ip_clock}:{clock.ip_leader}/leader_is_elected")
+                    url = (f"http://{clock.ip_leader}:2500/leader_is_elected")
+                    #url = (f"http://{clock.ip_clock}:{clock.ip_leader}/leader_is_elected")
 
                     response = requests.get(url, timeout=5)
                     status_code = response.status_code

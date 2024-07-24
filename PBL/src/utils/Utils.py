@@ -1,10 +1,22 @@
+""" 
+Módulo contendo as funções úteis para a implementação do sistema, entre elas, funções 
+relacionadas ao envio de múltiplas requisições por threads, e a função de checagem de 
+reconexão.
+"""
+
 import threading
 import requests
-import time
 
 
-#Cria uma estrutura de dados para armazenar os resultados das requisições
 def create_result_structure(quantity: int):
+    """
+    Cria estrutura relacionada ao envio de múltiplas requisições utilizando threads.
+
+    :param quantity: Quantidade de requisições que serão feitas.
+    :type quantity: int
+    :return: Estrutura que vai conter os dados das requisições após seu envio.
+    :rtype: dict
+    """
 
     result_dict = {}
     for i in range(quantity):
@@ -13,8 +25,18 @@ def create_result_structure(quantity: int):
     return result_dict
 
 
-#Função para enviar requisições baseado no tipo de rota que necessita desses dados
 def send_request(clock: object, data_request: dict):
+    """
+    Envio de uma requisição. É adaptada para o método HTTP de envio. Após o envio são 
+    armazenados os dados de resposta da requisição e a indicação que ela foi finalizada 
+    na estrutura de controle. Se a requisição não puder ser enviada, é iniciado o loop 
+    de reconexão com o relógio (função: loop_recconection).
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data_request: Dados da requisição.
+    :type data_request: dict
+    """
 
     try:
         if data_request["Método HTTP"] == "GET":
@@ -24,8 +46,8 @@ def send_request(clock: object, data_request: dict):
         elif data_request["Método HTTP"] == "PATCH":
             response = requests.patch(data_request["URL"], json=data_request["Dados"], timeout=5)
 
-        #if data_request["URL"] == (f"http://{data_request['IP do relógio']}:2500/ready_for_connection") and response.status_code != 200:
-        if data_request["URL"] == (f"http://{clock.ip_clock}:{data_request['IP do relógio']}/ready_for_connection") and response.status_code != 200:
+        if data_request["URL"] == (f"http://{data_request['IP do relógio']}:2500/ready_for_connection") and response.status_code != 200:
+        #if data_request["URL"] == (f"http://{clock.ip_clock}:{data_request['IP do relógio']}/ready_for_connection") and response.status_code != 200:
             raise requests.exceptions.ConnectionError    
 
     except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
@@ -34,24 +56,26 @@ def send_request(clock: object, data_request: dict):
         threading.Thread(target=loop_recconection, args=(clock, data_request["IP do relógio"],)).start()
         response = {"Bem sucedido": False, "Justificativa": "Banco desconectado"}
 
-    #print("\nResposta do requisição: ", response)
-    #print("Dados de tudo: ", data_request["Dicionário de resultados"])
-    #print("Dados da requisição: ", data_request["Dicionário de resultados"][data_request["Índice"]])
-
     data_request["Dicionário de resultados"][data_request["Índice"]]["Resposta"] = response
-    #Relógio terminou de responder e foi adicionado com sucesso 
     data_request["Dicionário de resultados"][data_request["Índice"]]["Terminado"] = True
 
 
-#Função para tentar reconectar os relógios de tempos em tempos
 def loop_recconection(clock: object, ip_clock: str):
+    """
+    Envio periódico de mensagem para testar conexão com um relógio. Esse loop é
+    encerrado quando a conexão com o relógio é confirmada.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param ip_clock: IP do relógio que deve ser reconectado.
+    :type ip_clock: str
+    """
 
     loop = True
     while loop:
         try:
-            #descomentar a linha de baixo e comentar a linha de cima para rodar no docker
-            #url = (f"http://{ip_clock}:2500/ready_for_connection")
-            url = (f"http://{clock.ip_clock}:{ip_clock}/ready_for_connection")
+            url = (f"http://{ip_clock}:2500/ready_for_connection")
+            #url = (f"http://{clock.ip_clock}:{ip_clock}/ready_for_connection")
             status_code = requests.get(url, timeout=5).status_code
 
             if status_code == 200:
@@ -62,11 +86,6 @@ def loop_recconection(clock: object, ip_clock: str):
                 raise requests.exceptions.ConnectionError
         
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
-            #time.sleep(1)
             pass
-    
-    #print("Reconectou: ", ip_clock)
-
-
     
     
