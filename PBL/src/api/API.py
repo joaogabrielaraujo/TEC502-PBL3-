@@ -1,12 +1,12 @@
 import threading
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from model.Clock import Clock
 import impl.Clock_impl as Clock_impl
 import impl.Election_impl as Election_impl
 import impl.Berkeley_impl as Berkeley_impl
 
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static')
 clock = Clock()
 
 #Rota para verificar se o relógio está pronto para conexão chamando a função do Clock_impl
@@ -91,6 +91,35 @@ def change_time():
     else:
         return jsonify(response), 404
 
+@app.route('/')
+def home_page():
+    return render_template('index.html')
+
+@app.route('/get_clock', methods=['GET'])
+def get_clock():
+    try:
+        current_time = clock.get_current_time()
+        return jsonify(time=current_time), 200
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
+@app.route('/update_time', methods=['POST'])
+def update_time():
+    data = request.get_json()
+    new_time = data.get('time')
+    if clock.set_time_interface(new_time):
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False)
+
+@app.route('/update_drift', methods=['POST'])
+def update_drift():
+    data = request.get_json()
+    new_drift = data.get('drift')
+    if clock.set_drift_interface(new_drift):
+        return jsonify(success=True)
+    else:
+        return jsonify(success=False)
 
 def start():
     list_clocks = ["2501","2500","2503","2502"]

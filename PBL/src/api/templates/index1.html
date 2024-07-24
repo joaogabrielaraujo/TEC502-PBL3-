@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clock Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Clock Interface</h1>
+        <div id="clock" class="clock">00:00:00</div>
+        <div class="form-group">
+            <label for="newTime">New Time (HH:MM:SS):</label>
+            <input type="text" id="newTime" placeholder="00:00:00">
+            <button onclick="updateTime()">Update Time</button>
+        </div>
+        <div class="form-group">
+            <label for="newDrift">New Drift:</label>
+            <input type="text" id="newDrift" placeholder="0.0">
+            <button onclick="updateDrift()">Update Drift</button>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>

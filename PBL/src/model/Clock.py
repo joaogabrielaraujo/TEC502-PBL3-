@@ -6,8 +6,8 @@ class Clock:
 
 
     def __init__(self):
-        self.ip_clock = socket.gethostbyname(socket.gethostname())
-        #
+        #self.ip_clock = socket.gethostbyname(socket.gethostname())
+        self.ip_clock = "192.168.1.106"
         self.port = "2500"
         #
         #self.list_clocks = [self.ip_clock]
@@ -115,9 +115,32 @@ class Clock:
             self.list_clocks.insert(insert_index, current_value)
 
 
-    def reset_atributes_leadership(self):
+    def reset_atributes_leadership(self,):
         with self.lock:
             self.leader_is_elected = False
             self.ip_leader = None
             #print("\nResetei coisas do líder\n")
+
+    def set_time_interface(self, time: str):
+        try:
+            h, m, s = map(int, time.split(':'))
+            new_time_seconds = h * 3600 + m * 60 + s
+            self.time = new_time_seconds - self.drift
+            return True
+        except ValueError:
+            return False
+        
+    def set_drift_interface(self, drift:str):
+        try:
+            self.drift = float(drift)
+            return True
+        except ValueError:
+            return False
+        
+
+    def get_current_time(self):
+        adjusted_time = self.time + self.drift
+        hours, remainder = divmod(adjusted_time, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{int(hours) % 24:02}:{int(minutes) % 60:02}:{int(seconds) % 60:02}"
     
