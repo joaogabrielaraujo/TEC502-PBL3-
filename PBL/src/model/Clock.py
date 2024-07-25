@@ -104,8 +104,7 @@ class Clock:
 
         with self.lock:
             self.time = time
-        
-        print("\nTempo atual: ", self.time)
+    
 
     def set_drift(self, drift: float):
         """
@@ -117,7 +116,6 @@ class Clock:
 
         with self.lock:
             self.drift = drift
-            print("\nDrift atual: ", self.drift)
 
     
     def set_regulating_time(self, regulating_time: int):
@@ -154,7 +152,6 @@ class Clock:
 
         with self.lock:
             self.ready_for_connection = ready_for_connection
-            #print("\nPronto para conexão: ", ready_for_connection)
 
     
     def set_leader_is_elected(self, leader_is_elected: bool):
@@ -167,37 +164,65 @@ class Clock:
 
         with self.lock:
             self.leader_is_elected = leader_is_elected
-            print("\nLíder está eleito: ", leader_is_elected)
 
     
     def set_ip_leader(self, ip_leader: str):
+        """
+        Setagem do IP do líder.
+
+        :param ip_leader: IP do líder.
+        :type ip_leader: str
+        """
+
         with self.lock:
             self.ip_leader = ip_leader
-            print("\nIP do líder: ", ip_leader)
 
 
     def set_time_without_leader_request(self, time_without_leader_request: int):
+        """
+        Setagem do tempo sem requisições do líder.
+
+        :param time_without_leader_request: Tempo sem requisições do líder.
+        :type time_without_leader_request: int
+        """
+
         with self.lock:
             self.time_without_leader_request = time_without_leader_request
 
 
     def set_problem_detected(self, problem_detected: bool):
+        """
+        Setagem da indicação de problema detectado no sistema do líder.
+
+        :param problem_detected: Indicação de problema detectado.
+        :type problem_detected: bool
+        """
+
         with self.lock:
             self.problem_detected = problem_detected
-            #print("\nProblema detectado: ", problem_detected)
 
 
     def get_clocks_on(self):
+        """
+        Retorna relógios que possuem conexão.
+
+        :return: Lista dos IPs dos relógios online.
+        :rtype: list
+        """
+
         list_clocks = []
         for key in self.trying_recconection.keys():
             if key != self.ip_clock and self.trying_recconection[key] == False:
-            #if key != self.port and self.trying_recconection[key] == False:
                 list_clocks.append(key)
         
         return list_clocks
 
     
     def sort_list_clocks(self):
+        """
+        Ordena lista dos relógios do menor para o maior IP.
+        """
+
         for i in range(1, len(self.list_clocks)):
             insert_index = i
             current_value = self.list_clocks.pop(i)
@@ -208,13 +233,25 @@ class Clock:
 
 
     def reset_atributes_leadership(self):
+        """
+        Reseta dados dos atributos relacionados a liderança.
+        """
+
         with self.lock:
             self.leader_is_elected = False
             self.ip_leader = None
-            #print("\nResetei coisas do líder\n")
 
 
     def set_time_interface(self, time: str):
+        """
+        Seta o tempo recebido da interface.
+
+        :param time: Tempo recebido da interface.
+        :type time: str
+        :return: Indicação se a setagem foi bem sucedida ou não.
+        :rtype: bool
+        """
+
         try:
             h, m, s = map(int, time.split(':'))
             new_time_seconds = h * 3600 + m * 60 + s
@@ -225,6 +262,15 @@ class Clock:
         
         
     def set_drift_interface(self, drift:str):
+        """
+        Seta o drift recebido da interface.
+
+        :param drift: Drift recebido da interface.
+        :type drift: str
+        :return: Indicação se a setagem foi bem sucedida ou não.
+        :rtype: bool
+        """
+
         try:
             self.drift = float(drift)
             return True
@@ -233,6 +279,13 @@ class Clock:
         
 
     def get_current_time(self):
+        """
+        Retorna o tempo atual do relógio
+
+        :return: Retorna o tempo do relógio formatado.
+        :rtype: str
+        """
+
         adjusted_time = self.time + self.drift
         hours, remainder = divmod(adjusted_time, 3600)
         minutes, seconds = divmod(remainder, 60)
