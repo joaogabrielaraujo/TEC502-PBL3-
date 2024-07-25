@@ -53,7 +53,7 @@ def send_request(clock: object, data_request: dict):
         if clock.trying_recconection[data_request["IP do relógio"]] == False:
             clock.set_trying_recconection(data_request["IP do relógio"], True)
         threading.Thread(target=loop_recconection, args=(clock, data_request["IP do relógio"],)).start()
-        response = {"Bem sucedido": False, "Justificativa": "Banco desconectado"}
+        response = {"Bem sucedido": False, "Justificativa": "Relógio desconectado"}
 
     data_request["Dicionário de resultados"][data_request["Índice"]]["Resposta"] = response
     data_request["Dicionário de resultados"][data_request["Índice"]]["Terminado"] = True

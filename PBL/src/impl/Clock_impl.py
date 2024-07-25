@@ -105,7 +105,5 @@ def add_clocks(clock: object, list_clocks: list):
                 loop = True
 
     clock.sort_list_clocks()
-    print("Lista ordenada: ", clock.list_clocks)
-    print("Dicionário de resultados: ", result_dict)
 
     election(clock)

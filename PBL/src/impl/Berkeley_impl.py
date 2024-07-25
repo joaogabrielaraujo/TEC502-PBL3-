@@ -1,14 +1,26 @@
+""" 
+Módulo contendo as funções relacionadas à implementação do algoritmo de Berkeley.
+"""
+
 from utils.Utils import create_result_structure, send_request
 import time
 import threading
 
 
 def syncronize_clocks(clock: object):
+    """
+    Regulação periódica dos relógios se o relógio atual for o líder. 
+    É pedido o tempo de cada relógio do sistema. É calculada média 
+    entre o maior e o menor tempo. A diferença dos tempos de cada 
+    relógio para a média é enviada.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    """
 
     while clock.ip_leader == clock.ip_clock:
 
         dict_times = request_times(clock)
-        #print("Dicionário de tempos: ", dict_times)
 
         count_clocks = len(dict_times)
         if count_clocks > 1:
@@ -21,8 +33,7 @@ def syncronize_clocks(clock: object):
                 list_clocks.append(key)
                 list_times.append(dict_times[key])
 
-            media = int((max(list_times) + min(list_times)) / 2)   
-            print("\nMEDIA: ", media, "\n")        
+            media = int((max(list_times) + min(list_times)) / 2)         
 
             differences = []
             all_clocks_synchronized = True
@@ -40,10 +51,8 @@ def syncronize_clocks(clock: object):
                 data = {"Diferença": differences[i], "Tudo sincronizado": all_clocks_synchronized}
 
                 if list_clocks[i] != clock.ip_clock:
-                #if list_clocks[i] != clock.port:
 
                     url = (f"http://{list_clocks[i]}:2500/regulate_time")
-                    #url = (f"http://{clock.ip_clock}:{list_clocks[i]}/regulate_time")
 
                     all_data_request = {"URL": url, 
                                         "IP do relógio": list_clocks[i], 
@@ -75,6 +84,15 @@ def syncronize_clocks(clock: object):
 
 
 def request_times(clock: object):
+    """
+    Função de envio de requisição dos tempos dos relógios do sistema. 
+    Os tempos são armazenados e retornados.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    :return: Tempos dos relógios que responderam a requisição.
+    :rtype: dict
+    """
     
     dict_times = {}
     clocks_on = clock.get_clocks_on()
@@ -84,7 +102,6 @@ def request_times(clock: object):
     for i in range(quantity):
         
         url = (f"http://{clocks_on[i]}:2500/request_time")
-        #url = (f"http://{clock.ip_clock}:{clocks_on[i]}/request_time")
 
         all_data_request = {"URL": url, 
                             "IP do relógio": clocks_on[i], 
@@ -103,7 +120,6 @@ def request_times(clock: object):
                 loop = True
 
     dict_times[clock.ip_clock] = clock.time
-    #dict_times[clock.port] = clock.time
 
     for ip_clock in clocks_on:
         index = clocks_on.index(ip_clock)
@@ -118,6 +134,18 @@ def request_times(clock: object):
         
 
 def request_time(clock: object, data: dict):
+    """
+    Recebimento de uma requisição de tempo. Se não tiver um líder eleito, 
+    o relógio que enviou a requisição é setado como líder. O tempo atual é 
+    retornado para ele.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados da requisição.
+    :type data: dict
+    :return: Resposta da requisição.
+    :rtype: dict
+    """
 
     if clock.problem_detected == False:
 
@@ -146,6 +174,16 @@ def request_time(clock: object, data: dict):
 
 
 def receive_regulate_time(clock: object, data: dict):
+    """
+    Recebimento de uma requisição de regulação de tempo.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados da requisição.
+    :type data: dict
+    :return: Resposta da requisição.
+    :rtype: dict
+    """
 
     threading.Thread(target=regulate_time, args=(clock, data,)).start()
 
@@ -154,19 +192,26 @@ def receive_regulate_time(clock: object, data: dict):
 
 
 def regulate_time(clock: object, data: dict):
-    print("\nRegulando...\n")
-    print("Diferença recebida: ", data["Diferença"])
+    """
+    Função de regulação de tempo. É checado se o tempo atual está antes ou 
+    depois da média. Se estiver antes da média, o relógio é acelerado 
+    proporcionalmente para chegar mais próximo dela. Se estiver depois da 
+    média, ele é desacelerado para que os outros relógios possam alcançá-lo. 
+    É setado o atributo que indica que deve ser feita a refulação. O tempo 
+    de regulação é de 5 segundos. 
 
-    print("Drift: ", clock.drift)
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados da regulação.
+    :type data: dict
+    """
 
     if data["Diferença"] > 0:
 
         if data["Diferença"] >= 5:
-
             clock.set_regulate_base_count(500 / data["Diferença"])
 
         else:
-
             clock.set_regulate_base_count(100 - (data["Diferença"] * 10))
 
             if data["Diferença"] <= 2:
@@ -177,21 +222,15 @@ def regulate_time(clock: object, data: dict):
     elif data["Diferença"] < 0:
 
         if data["Diferença"] <= -5:
-            print("\nDIFERENÇA GRANDE\n")
             clock.set_regulate_base_count(450)
 
         else:
-            print("\nDIFERENÇA PEQUENA\n")
             clock.set_regulate_base_count(((-1) * (data["Diferença"] * 10)) + 100)
-            print("\nBase regulada: ", clock.regulate_base_count, "\n")
 
         clock.set_regulating_time(True)
     
     elif data["Tudo sincronizado"] == False:
-
-        print("\nDIFERENÇA CENTRAL\n")
         clock.set_regulate_base_count(100)
-        print("\nBase regulada: ", clock.regulate_base_count, "\n")
 
         clock.set_regulating_time(True)
 
@@ -200,7 +239,5 @@ def regulate_time(clock: object, data: dict):
         clock.set_regulate_base_count(0)
         clock.set_regulating_time(True)
 
-
     time.sleep(5)
-    
     clock.set_regulating_time(False)
