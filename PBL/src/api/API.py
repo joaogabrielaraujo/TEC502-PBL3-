@@ -9,10 +9,19 @@ import impl.Berkeley_impl as Berkeley_impl
 app = Flask(__name__, template_folder='templates')
 clock = Clock()
 
-#Rota para verificar se o relógio está pronto para conexão chamando a função do Clock_impl
+
 @app.route('/ready_for_connection', methods=['GET'])
 def ready_for_connection():
+    """
+    Adiciona os IPs dos relógios da lista no armazenamento e testa a 
+    conexão com eles. Depois ordena a lista com os IPs e inicia o processo 
+    de decisão do líder.
 
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param list_clocks: IPs dos relógios.
+    :type list_clocks: list
+    """
     response = Clock_impl.ready_for_connection(clock)
       
     if response["Bem sucedido"] == True:
@@ -20,10 +29,15 @@ def ready_for_connection():
     else:
         return jsonify(response), 404
 
-#Rota para verificar se o lider foi eleito chamando a função do Election_impl
+
 @app.route('/leader_is_elected', methods=['GET'])
 def leader_is_elected():
+    """
+    Verifica se o líder foi eleito.
 
+    :param clock: Dados do relógio.
+    :type clock: object
+    """
     response = Election_impl.leader_is_elected(clock)
       
     if response["Bem sucedido"] == True:
@@ -31,10 +45,17 @@ def leader_is_elected():
     else:
         return jsonify(response), 404
 
-#Rota resposável por eleger o lider chamando a função do Election_impl
+
 @app.route('/claim_leadership', methods=['POST'])
 def claim_leadership():
+    """
+    Elege o líder entre os relógios.
 
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados para eleição do líder.
+    :type data: dict
+    """
     data = request.json
     response = Election_impl.claim_leadership(clock, data)
       
@@ -43,10 +64,17 @@ def claim_leadership():
     else:
         return jsonify(response), 404
 
-#Rota resposável por requerir o tempo do relógio chamando a função do Berkeley_impl
+
 @app.route('/request_time', methods=['GET'])
 def request_time():
+    """
+    Requisita o tempo do relógio.
 
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados para requisição do tempo.
+    :type data: dict
+    """
     data = request.json
     response = Berkeley_impl.request_time(clock, data)
       
@@ -55,10 +83,17 @@ def request_time():
     else:
         return jsonify(response), 404
 
-#Rota resposável por verifiar se houve algum problema com o lider chamando a função do Election_impl
+
 @app.route('/problem_alert_leadership', methods=['POST'])
 def problem_alert_leadership():
+    """
+    Verifica se houve algum problema com o líder.
 
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados do problema.
+    :type data: dict
+    """
     data = request.json
     response = Election_impl.receive_problem_alert(clock, data)
       
@@ -70,7 +105,14 @@ def problem_alert_leadership():
 
 @app.route('/regulate_time', methods=['POST'])
 def regulate_time():
+    """
+    Regula o tempo dos relógios com base nos relógios conectados, que foram recebeidos.
 
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados para regulação do tempo.
+    :type data: dict
+    """
     data = request.json
     response = Berkeley_impl.receive_regulate_time(clock, data)
       
@@ -82,7 +124,14 @@ def regulate_time():
 
 @app.route('/change_time', methods=['PATCH'])
 def change_time():
+    """
+    Muda o tempo do relógio para o tempo especificado.
 
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados para mudança do tempo.
+    :type data: dict
+    """
     data = request.json
     response = Clock_impl.change_time(clock, data)
       
@@ -93,10 +142,19 @@ def change_time():
 
 @app.route('/')
 def home_page():
+    """
+    Renderiza a página inicial.
+    """
     return render_template('index.html')
 
 @app.route('/get_clock', methods=['GET'])
 def get_clock():
+    """
+    Obtém o horário atual, o líder e o IP do relógio.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    """
     try:
         current_time = clock.get_current_time()
         leader= clock.ip_leader
@@ -107,6 +165,14 @@ def get_clock():
 
 @app.route('/update_time', methods=['POST'])
 def update_time():
+    """
+    Atualiza o tempo do relógio.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados para atualização do tempo.
+    :type data: dict
+    """
     data = request.get_json()
     new_time = data.get('time')
     if clock.set_time_interface(new_time):
@@ -116,6 +182,14 @@ def update_time():
 
 @app.route('/update_drift', methods=['POST'])
 def update_drift():
+    """
+    Atualiza o drift do relógio na classe Clock.
+
+    :param clock: Dados do relógio.
+    :type clock: object
+    :param data: Dados para atualização do drift.
+    :type data: dict
+    """
     data = request.get_json()
     new_drift = data.get('drift')
     if clock.set_drift_interface(new_drift):
