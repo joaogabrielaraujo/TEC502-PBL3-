@@ -1,5 +1,6 @@
 import threading
 from flask import Flask, jsonify, request, render_template
+import re
 from model.Clock import Clock
 import impl.Clock_impl as Clock_impl
 import impl.Election_impl as Election_impl
@@ -201,22 +202,26 @@ def update_drift():
 def start():
 
     print("\nIP atual: ", clock.ip_clock)
-    quantity_clocks = int(input("\nQuantidade de relógios: "))
 
-    list_clocks = []
-    print()
-    for i in range (quantity_clocks):
+    try:
+        quantity_clocks = int(input("\nQuantidade de relógios: "))
 
-        ip_clock = input("IP do relógio: ")
-        list_clocks.append(ip_clock)
+        list_clocks = []
+        print()
+        for i in range (quantity_clocks):
 
-    list_clocks.remove(clock.ip_clock)
-    print("Lista de relógios: ", list_clocks)
-    
-    threading.Thread(target=Clock_impl.start_count, args=(clock,)).start()  
-    threading.Thread(target=Election_impl.periodic_leadership_check, args=(clock,)).start()   
-    threading.Thread(target=Clock_impl.add_clocks,args=(clock, list_clocks,)).start()
-    app.run(host='0.0.0.0', port=2500)
+            ip_clock = input("IP do relógio: ")
+            if (not (re.match(r'^(\d{1,3}\.){3}\d{1,3}$', ip_clock))):
+                raise ValueError
+            list_clocks.append(ip_clock)
 
-if __name__ == '__main__':
-    start()
+        list_clocks.remove(clock.ip_clock)
+        print()
+        
+        threading.Thread(target=Clock_impl.start_count, args=(clock,)).start()  
+        threading.Thread(target=Election_impl.periodic_leadership_check, args=(clock,)).start()   
+        threading.Thread(target=Clock_impl.add_clocks,args=(clock, list_clocks,)).start()
+        app.run(host='0.0.0.0', port=2500)
+
+    except ValueError:
+        print("\nDado inválido.")

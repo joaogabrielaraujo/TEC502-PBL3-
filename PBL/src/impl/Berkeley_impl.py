@@ -214,9 +214,6 @@ def regulate_time(clock: object, data: dict):
         else:
             clock.set_regulate_base_count(100 - (data["Diferença"] * 10))
 
-            if data["Diferença"] <= 2:
-                clock.set_time(clock.time + 1)
-
         clock.set_regulating_time(True)
 
     elif data["Diferença"] < 0:
@@ -236,6 +233,7 @@ def regulate_time(clock: object, data: dict):
 
     elif data["Tudo sincronizado"] == True:
 
+        print('\033[92m' + "\nSINCRONIZADO!\n" '\033[0m')
         clock.set_regulate_base_count(0)
         clock.set_regulating_time(True)
 
